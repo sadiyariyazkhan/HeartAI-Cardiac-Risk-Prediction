@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeartAI - Advanced Cardiac Analytics</title>
+    <!-- Chart.js CDN for Risk Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #030a16;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* BACKGROUND LAYER */
+        .global-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .hex-grid-pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(rgba(0, 180, 216, 0.12) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .radial-glow-1 {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(0, 180, 216, 0.15) 0%, transparent 70%);
+        }
+
+        .radial-glow-2 {
+            position: absolute;
+            bottom: -10%;
+            right: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(0, 119, 182, 0.15) 0%, transparent 70%);
+        }
+
+        .medical-cross {
+            position: absolute;
+            color: rgba(0, 180, 216, 0.15);
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 4rem;
+            background: rgba(3, 10, 22, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(0, 180, 216, 0.2);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        .logo-icon {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #00b4d8, #0077b6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+        }
+
+        .nav-links a:hover{
+            color: #00b4d8;
+            background: transparent;
+        }
+
+        .nav-links a.active{
+            background: transparent !important;
+            color: #00b4d8 !important;
+        }
+
+        /* NAVIGATION ACTIVE UNDERLINE INDICATOR */
+        .nav-links a.active, 
+        .nav-item.active {
+            color: #00b4d8 !important;
+            position: relative;
+            background: transparent !important;
+        }
+
+        .nav-links a.active::after,
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 20%;
+            width: 60%;
+            height: 2px;
+            background: #00b4d8;
+            border-radius: 2px;
+            box-shadow: 0 0 8px #00b4d8;
+        }
+
+        /* SECTIONS & COMPACT LAYOUT SPACING */
+        .page-section {
+            display: none;
+            padding: 5rem 4rem 1rem 4rem;
+            min-height: 100vh;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .page-section.active-page {
+            display: block;
+        }
+
+        /* SECTION HEADINGS & DESCRIPTIONS */
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #00b4d8;
+        }
+
+        .section-desc {
+            color: #94a3b8;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            max-width: 850px;
+        }
+
+        .badge {
+            background: rgba(0, 180, 216, 0.15);
+            color: #00b4d8;
+            border: 1px solid rgba(0, 180, 216, 0.3);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        /* HOME / HERO SECTION */
+        .hero-section {
+            width: 100%;
+            position: relative;
+            /* Soft blue spotlight background */
+            background-color: #030a16;
+            background-image: radial-gradient(circle at 50% 40%, #0d2847 0%, #030a16 80%);
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(rgba(0, 180, 216, 0.25) 1.2px, transparent 1.2px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero-main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: center;
+            min-height: 60vh;
+        }
+
+        .hero-title {
+            font-size: 3.2rem;
+            line-height: 1.15;
+            margin-bottom: 1rem;
+        }
+
+        .cyan-text {
+            color: #00b4d8;
+        }
+
+        .letter-pop {
+            display: inline-block;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease, text-shadow 0.2s ease;
+            cursor: default;
+        }
+
+        .letter-pop:hover {
+            transform: translateY(-10px) scale(1.25);
+            color: #00b4d8;
+            text-shadow: 0 0 14px rgba(0, 180, 216, 0.7);
+        }
+
+        /* 3D HEART DISPLAY */
+        .heart-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 520px;
+            perspective: 1000px;
+            flex: 0 0 45%;
+            z-index: 3;
+        }
+
+        .heart-circle-bg {
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 180, 216, 0.15);
+            box-shadow:
+            0 0 0 25px rgba(0, 180, 216, 0.03),
+            0 0 0 50px rgba(0, 180, 216, 0.02),
+            0 0 0 75px rgba(0, 180, 216, 0.01);
+            background: radial-gradient(circle, rgba(0, 180, 216, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* Handles floating animation */
+        .heart-float-wrapper {
+            position: relative;
+            width: 380px;
+            height: 380px;
+            animation: slowFloat 8s ease-in-out infinite;
+        }
+        
+        /* Handles 3D cursor tilt animation */
+        .heart-3d-box {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            perspective: 1000px;
+            cursor: pointer;
+            will-change: transform;
+        }
+
+        @keyframes slowFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+        }
+
+        .heart-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 25px rgba(0, 180, 216, 0.4));
+            pointer-events: none;
+        }
+
+        .hotspot {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: rgba(0, 180, 216, 0.4);
+            border: 2px solid #00b4d8;
+            border-radius: 50%;
+            box-shadow: 0 0 12px #00b4d8;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .hotspot-tooltip {
+            visibility: hidden;
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 25, 47, 0.95);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            border: 1px solid #00b4d8;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .hotspot:hover .hotspot-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Container holding top split and bottom cards */
+        .hero-container {
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem 2rem 2rem;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        /* Places text on left, 3D heart on right */
+        .hero-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 3;
+            gap: 2rem;
+        }
+
+        .hero-content {
+            flex: 1 1 50%;
+            max-width: 580px;
+            position: relative;
+            z-index: 3;
+        }
+
+        /* 1. Large Central Plus (+) */
+        .bg-plus-main {
+            position: fixed;
+            top: 15vh;
+            left: 42vw;
+            font-size: 14rem;
+            font-weight: 900;
+            font-family: Arial, Helvetica, sans-serif;
+            color: rgba(0, 180, 216, 0.12);
+            text-shadow: 0 0 25px rgba(0, 180, 216, 0.15);
+            pointer-events: none;
+            z-index: 1;
+            line-height: 0.7;
+            user-select: none;
+        }
+
+        /* 2. Secondary Bottom-Right Plus (+) */
+        .bg-plus-sub {
+            position: fixed;
+            bottom: 12vh;
+            right: 2vw;
+            font-size: 8rem;
+            font-weight: 800;
+            font-family: Arial, Helvetica, sans-serif;
+            color: rgba(0, 180, 216, 0.05);
+            pointer-events: none;
+            z-index: 1;
+            line-height: 1;
+            user-select: none;
+        }
+
+        /* Exact 3D Hyperbolic Mesh Wave Landscape (Matches Reference Image) */
+        #meshWaveCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            /* Masks mesh specifically to 55%-88% height, fading out by 70% width */
+            mask-image: linear-gradient(to bottom, transparent 0%, transparent 50%, black 65%, black 88%, transparent 95%),
+                        linear-gradient(to right, black 0%, black 65%, transparent 80%);
+            mask-composite: intersect;
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 50%, black 65%, black 88%, transparent 95%),
+                                linear-gradient(to right, black 0%, black 65%, transparent 80%);
+            -webkit-mask-composite: source-in;
+        }
+        
+        /* Explicitly clear old pseudo-elements to avoid layout collisions */
+        .hero-container::before,
+        .hero-container::after,
+        .hero-content::before,
+        .hero-content::after {
+            content: none !important;
+            display: none !important;
+        }
+        
+        .hero-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            width: 100%;
+        }
+
+        .stat-card {
+            background: rgba(10, 25, 47, 0.6);
+            border: 1px solid rgba(0, 180, 216, 0.2);
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 180, 216, 0.6);
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            border-radius: 10px;
+            background: rgba(0, 180, 216, 0.12);
+            border: 1px solid rgba(0, 180, 216, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #00b4d8;
+            box-shadow: inset 0 0 10px rgba(0, 180, 216, 0.1);
+        }
+
+        .stat-card h4 {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #ffffff;
+            font-weight: 600;
+        }
+        
+        .stat-card p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #8892b0;
+        }
+
+        /* BUTTONS */
+        .btn-primary {
+            background: linear-gradient(135deg, #00b4d8, #0077b6);
+            color: #fff;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 180, 216, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 180, 216, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        /* GRID CARDS */
+        .cards-grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .cards-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .glass-card {
+            background: rgba(10, 25, 47, 0.6);
+            border: 1px solid rgba(0, 180, 216, 0.2);
+            padding: 1.5rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 180, 216, 0.5);
+        }
+
+        .card-icon-box {
+            font-size: 1.8rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .glass-card h3 {
+            margin-bottom: 0.5rem;
+            color: #f8fafc;
+        }
+
+        .glass-card p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* ASSESSMENT FORM */
+        .assessment-card {
+            background: rgba(10, 25, 47, 0.6);
+            border: 1px solid rgba(0, 180, 216, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(12px);
+        }
+
+        .wizard-steps {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .wizard-step {
+            color: #64748b;
+            font-weight: 600;
+            cursor: pointer;
+            padding-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .wizard-step.active {
+            color: #00b4d8;
+            border-bottom: 2px solid #00b4d8;
+        }
+
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        .form-control {
+            background: rgba(3, 10, 22, 0.8);
+            border: 1px solid rgba(0, 180, 216, 0.3);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: #fff;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #00b4d8;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1.8rem;
+        }
+
+        /* INLINE RESULT CHART AREA */
+        .results-container {
+            display: none;
+            margin-top: 2rem;
+            background: rgba(3, 10, 22, 0.9);
+            border: 1px solid #00b4d8;
+            border-radius: 12px;
+            padding: 1.5rem;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chart-box {
+            position: relative;
+            max-width: 500px;
+            margin: 1.5rem auto 0 auto;
+            height: 280px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- BACKGROUND LAYER -->
+<div class="global-bg">
+    <div class="hex-grid-pattern"></div>
+    <div class="radial-glow-1"></div>
+    <div class="radial-glow-2"></div>
+
+    <div class="medical-cross" style="top: 25%; left: 42%;">+</div>
+    <div class="medical-cross" style="top: 68%; left: 6%;">+</div>
+    <div class="medical-cross" style="top: 62%; right: 4%;">+</div>
+    <div class="medical-cross" style="top: 20%; right: 8%;">+</div>
+</div>
+
+<!-- Fixed Navigation Header -->
+<nav>
+    <div class="logo" onclick="switchPage('home')">
+        <div class="logo-icon">♥</div>
+        <span>HeartAI</span>
+    </div>
+    <ul class="nav-links">
+        <li><a id="nav-home" class="active" href="javascript:void(0)" onclick="switchPage('home')"><span>🏠</span> Home</a></li>
+        <li><a id="nav-about" href="javascript:void(0)" onclick="switchPage('about')"><span>ℹ️</span> About</a></li>
+        <li><a id="nav-specialty" href="javascript:void(0)" onclick="switchPage('specialty')"><span>🩺</span> Specialty</a></li>
+        <li><a id="nav-assessment" href="javascript:void(0)" onclick="switchPage('assessment')"><span>📝</span> Assessment</a></li>
+        <li><a id="nav-overview" href="javascript:void(0)" onclick="switchPage('overview')"><span>📊</span> Overview</a></li>
+    </ul>
+</nav>
+
+<!-- SECTION 1: HOME -->
+<section id="home" class="page-section active-page">
+    <div class="hero-container">
+        <!-- Dedicated Background Elements -->
+        <div class="bg-plus-main">+</div>
+        <div class="bg-plus-sub">+</div>
+
+        <!-- Canvas Element Replacing .bg-mesh-wave -->
+        <canvas id="meshWaveCanvas"></canvas>
+
+        <!--Top Row: split text lef, heart right-->
+        <div class="hero-top-row">
+            <div class="hero-content">
+                <span class="badge">Clinical Intelligence Platform</span>
+                
+                <h1 class="hero-title">
+                    <span class="pop-title-line">
+                        <span class="letter-pop">P</span><span class="letter-pop">r</span><span class="letter-pop">e</span><span class="letter-pop">d</span><span class="letter-pop">i</span><span class="letter-pop">c</span><span class="letter-pop">t</span><span class="letter-pop">i</span><span class="letter-pop">v</span><span class="letter-pop">e</span>
+                    </span><br>
+                    <span class="pop-title-line cyan-text">
+                        <span class="letter-pop">C</span><span class="letter-pop">a</span><span class="letter-pop">r</span><span class="letter-pop">d</span><span class="letter-pop">i</span><span class="letter-pop">a</span><span class="letter-pop">c</span>&nbsp;<span class="letter-pop">R</span><span class="letter-pop">i</span><span class="letter-pop">s</span><span class="letter-pop">k</span>
+                    </span><br>
+                    <span class="pop-title-line">
+                        <span class="letter-pop">A</span><span class="letter-pop">n</span><span class="letter-pop">a</span><span class="letter-pop">l</span><span class="letter-pop">y</span><span class="letter-pop">t</span><span class="letter-pop">i</span><span class="letter-pop">c</span><span class="letter-pop">s</span>
+                    </span>
+                </h1>
+                
+                <p class="section-desc">
+                    Utilize machine learning algorithms to evaluate clinical biomarkers and assess heart disease risk instantly with actionable confidence scoring.
+                </p>
+                
+                <button class="btn-primary" onclick="switchPage('assessment')">Start Risk Assessment →</button>
+            </div>
+            
+            <div class="heart-wrapper" id="heartWrapper">
+                <div class="heart-circle-bg"></div>
+                <div class="heart-float-wrapper">
+                    <div class="heart-3d-box" id="heartBox">
+                        <img src="/static/Heart_image.png" alt="3D Cardiac Model" class="heart-img" onerror="this.src='https://via.placeholder.com/380'">
+                        
+                        <div class="hotspot" style="top: 32%; left: 58%;">
+                            <div class="hotspot-tooltip">Aorta Artery</div>
+                        </div>
+                        <div class="hotspot" style="top: 48%; left: 66%;">
+                            <div class="hotspot-tooltip">Pulmonary Trunk</div>
+                        </div>
+                        <div class="hotspot" style="top: 64%; left: 54%;">
+                            <div class="hotspot-tooltip">Left Ventricle</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <div class="hero-stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">🧠</div>
+            <div class="stat-text">
+                <h4>AI-Powered</h4>
+                <p>ML Risk Prediction</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">♥</div>
+            <div class="stat-text">
+                <h4>95%+</h4>
+                <p>Prediction Accuracy</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🛡️</div>
+            <div class="stat-text">
+                <h4>Trusted</h4>
+                <p>Healthcare Experts</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-text">
+                <h4>Data-Driven</h4>
+                <p>Clinical Insights</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 2: ABOUT -->
+<section id="about" class="page-section">
+    <h2 class="section-title">About HeartAI</h2>
+    <p class="section-desc">
+        HeartAI is a specialized clinical decision-support engine designed to bridge advanced machine learning with everyday cardiovascular diagnostics. By analyzing patient vitals, laboratory biomarkers, and resting ECG indicators simultaneously, our platform delivers accurate, real-time risk stratification.
+    </p>
+
+    <div class="cards-grid-3">
+        <div class="glass-card">
+            <div class="card-icon-box">🎯</div>
+            <h3>Our Mission</h3>
+            <p>Empowering healthcare providers with actionable predictive intelligence to enable proactive early intervention and minimize misdiagnoses.</p>
+        </div>
+        <div class="glass-card">
+            <div class="card-icon-box">⚡</div>
+            <h3>Machine Learning Engine</h3>
+            <p>Built on ensemble classification models trained on rigorous clinical heart disease datasets, optimized for high precision and low false-negative rates.</p>
+        </div>
+        <div class="glass-card">
+            <div class="card-icon-box">🛡️</div>
+            <h3>Clinical Safety & Privacy</h3>
+            <p>Designed with strict data protection protocols, acting as a supportive decision-making tool that complements physician expertise.</p>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 3: SPECIALTY -->
+<section id="specialty" class="page-section">
+    <h2 class="section-title">Cardiovascular Specialty Focus</h2>
+    <p class="section-desc">Specialized analytics tuned specifically for non-invasive early detection of coronary artery conditions.</p>
+
+    <div class="cards-grid-2">
+        <div class="glass-card">
+            <div class="card-icon-box">📈</div>
+            <h3>Ischemia Screening</h3>
+            <p>Evaluates exercise-induced angina and ST-segment depression parameters to flag potential ischemia.</p>
+        </div>
+        <div class="glass-card">
+            <div class="card-icon-box">💧</div>
+            <h3>Biomarker Weighting</h3>
+            <p>Applies specialized scaling to cholesterol levels and fasting blood sugar ratios.</p>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 4: ASSESSMENT -->
+<section id="assessment" class="page-section">
+    <div class="assessment-card">
+        <h2 class="section-title" style="font-size: 2rem; margin-bottom: 0.5rem;">Patient Clinical Parameters</h2>
+        <p class="section-desc" style="margin-bottom: 1rem;">Complete all 3 wizard steps to compute complete risk factor score.</p>
+
+        <div class="wizard-steps">
+            <div class="wizard-step active" id="step1-indicator" onclick="goToStep(1)">1 Patient Info</div>
+            <div class="wizard-step" id="step2-indicator" onclick="goToStep(2)">2 Vitals & Blood Tests</div>
+            <div class="wizard-step" id="step3-indicator" onclick="goToStep(3)">3 ECG & Cardiac Stats</div>
+        </div>
+
+        <form id="assessmentForm" onsubmit="event.preventDefault();">
+            <!-- Step 1 -->
+            <div class="form-step active" id="step1">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Age: <span id="ageVal" style="color: #00B4D8;">52</span> yrs</label>
+                        <input type="range" id="age" class="form-control" min="20" max="80" value="52" oninput="document.getElementById('ageVal').innerText=this.value">
+                    </div>
+                    <div class="form-group">
+                        <label>Sex</label>
+                        <select id="sex" class="form-control">
+                            <option value="1">Male</option>
+                            <option value="0">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Chest Pain Type</label>
+                        <select id="cp" class="form-control">
+                            <option value="1">ATA (Atypical Angina)</option>
+                            <option value="2">NAP (Non-Anginal)</option>
+                            <option value="3">ASY (Asymptomatic)</option>
+                            <option value="0">TA (Typical Angina)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions" style="justify-content: flex-end;">
+                    <button type="button" class="btn-primary" onclick="goToStep(2)">Next: Vitals & Blood Tests →</button>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="form-step" id="step2">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Resting BP (mmHg)</label>
+                        <input type="number" id="trestbps" class="form-control" value="120">
+                    </div>
+                    <div class="form-group">
+                        <label>Cholesterol (mg/dL)</label>
+                        <input type="number" id="chol" class="form-control" value="210">
+                    </div>
+                    <div class="form-group">
+                        <label>Fasting Blood Sugar</label>
+                        <select id="fbs" class="form-control">
+                            <option value="0">Normal (&lt; 120 mg/dl)</option>
+                            <option value="1">&gt; 120 mg/dl</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="goToStep(1)">← Back</button>
+                    <button type="button" class="btn-primary" onclick="goToStep(3)">Next: ECG & Cardiac Stats →</button>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="form-step" id="step3">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Resting ECG</label>
+                        <select id="restecg" class="form-control">
+                            <option value="0">Normal</option>
+                            <option value="1">ST Wave Abnormality</option>
+                            <option value="2">LV Hypertrophy</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Max HR (bpm): <span id="hrVal" style="color:#00B4D8;">150</span></label>
+                        <input type="range" id="thalach" class="form-control" min="60" max="220" value="150" oninput="document.getElementById('hrVal').innerText=this.value">
+                    </div>
+                    <div class="form-group">
+                        <label>Exercise Angina</label>
+                        <select id="exang" class="form-control">
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Oldpeak</label>
+                        <input type="number" step="0.1" id="oldpeak" class="form-control" value="1.5">
+                    </div>
+                    <div class="form-group">
+                        <label>ST Slope</label>
+                        <select id="slope" class="form-control">
+                            <option value="1">Up</option>
+                            <option value="2">Flat</option>
+                            <option value="0">Down</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="goToStep(2)">← Back</button>
+                    <button type="button" class="btn-primary" onclick="submitAssessment(event)">Analyze Cardiac Risk →</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Inline Assessment Result Chart Container -->
+        <div id="resultsArea" class="results-container" style="display: none; margin-top: 2rem;">
+            <h3 style="color: #00b4d8; text-align: center;">Cardiac Risk Analysis Breakdown</h3>
+            <p id="riskSummary" style="text-align: center; margin-top: 0.5rem; color: #cbd5e1; font-weight: bold; font-size: 1.1rem;"></p>
+            <div class="chart-box" style="position: relative; max-width: 400px; margin: 1.5rem auto 0 auto;">
+                <canvas id="riskChart"></canvas>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 5: OVERVIEW -->
+<section id="overview" class="page-section">
+    <h2 class="section-title">Platform Overview</h2>
+    <p class="section-desc">HeartAI processes key clinical variables through trained machine learning models to provide fast, high-confidence heart risk evaluations.</p>
+
+    <div class="cards-grid-3">
+        <div class="glass-card">
+            <div class="card-icon-box">⏱️</div>
+            <h3>Instant Scoring</h3>
+            <p>Generates real-time predictions based on key clinical parameters including blood pressure, ECG, and chest pain indicators.</p>
+        </div>
+        <div class="glass-card">
+            <div class="card-icon-box">🎯</div>
+            <h3>High Accuracy</h3>
+            <p>Trained with cross-validation on validated cardiovascular datasets for optimized predictive capability.</p>
+        </div>
+        <div class="glass-card">
+            <div class="card-icon-box">💡</div>
+            <h3>Clinical Insight</h3>
+            <p>Designed to support clinical decision-making with confidence scoring metrics and explainable AI insights.</p>
+        </div>
+    </div>
+</section>
+
+<script>
+/* 3D Dynamic Mesh Canvas Renderer */
+const canvas = document.getElementById('meshWaveCanvas');
+const ctx = canvas.getContext('2d');
+
+let width, height;
+function resizeCanvas() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+const gridX = 140;
+const gridZ = 60;
+
+let terrainTime = 0;
+
+function drawMesh() {
+    ctx.clearRect(0, 0, width, height);
+
+    const terrainWidth = width * 2.1;   // Extends wide to reach 0% left edge
+    const terrainDepth = height * 1.3;
+
+    const fov = 440;
+    const cameraY = -height * 0.24;     // Tilted floor view looking down
+    const cameraZ = 180;
+    const centerY = height * 0.75;       // Baseline centered between ECG line and feature cards
+
+    terrainTime += 0.003;
+
+    const grid = [];
+
+    for (let z = 0; z < gridZ; z++) {
+        const row = [];
+        const zPct = z / (gridZ - 1);
+        const worldZ = cameraZ + zPct * terrainDepth;
+
+        for (let x = 0; x < gridX; x++) {
+            const xPct = x / (gridX - 1);
+            
+            // Shift terrain offset slightly leftward
+            const worldX = (xPct - 0.48) * terrainWidth;
+
+            // Envelope to fade out towards 70% width on the right
+            const edgeEnvelope = Math.sin(Math.min(xPct * 1.2, 1.0) * Math.PI) * (1 - zPct * 0.12);
+
+            // 1. LEFT CREST (0% - 30%): Slope rising under left heading text
+            const leftCrest = Math.sin(xPct * Math.PI * 1.5 - zPct * Math.PI * 0.7 + terrainTime) 
+                              * (height * 0.22) 
+                              * Math.exp(-Math.pow((xPct - 0.10) / 0.38, 2));
+
+            // 2. MIDDLE CREST (30% - 60%): Low wave behind/under CTA button
+            const centerCrest = Math.sin(xPct * Math.PI * 2.2 + zPct * Math.PI * 1.1 - terrainTime * 0.8) 
+                                * (height * 0.20) 
+                                * Math.exp(-Math.pow((xPct - 0.45) / 0.32, 2));
+
+            // Surface ripples
+            const microRipples = (Math.cos(xPct * Math.PI * 6.0 + zPct * Math.PI * 2.5 - terrainTime * 1.2) * 6) +
+                                 (Math.sin((xPct * 3.5 + zPct * 2.0) * Math.PI - terrainTime * 0.5) * 4);
+
+            const worldY = cameraY + (leftCrest + centerCrest + microRipples) * edgeEnvelope;
+
+            // 3D Perspective Projection
+            const scale = fov / (fov + worldZ);
+            const screenX = width * 0.5 + worldX * scale;
+            const screenY = centerY + worldY * scale;
+
+            // Fades as it moves right toward the heart
+            const rightFade = Math.max(0, 1 - Math.pow(xPct / 0.72, 3));
+            const opacity = Math.max(0.03, (1 - zPct * 0.45) * 0.3 * rightFade);
+
+            row.push({
+                x: screenX,
+                y: screenY,
+                opacity: opacity
+            });
+        }
+        grid.push(row);
+    }
+
+    // Render Grid Wireframe
+    for (let z = 0; z < gridZ - 1; z++) {
+        for (let x = 0; x < gridX - 1; x++) {
+            const p1 = grid[z][x];
+            const p2 = grid[z][x + 1];
+            const p3 = grid[z + 1][x];
+
+            if (p1.opacity > 0.02) {
+                ctx.strokeStyle = `rgba(0, 180, 230, ${p1.opacity})`;
+                ctx.lineWidth = 0.8;
+
+                // Horizontal Grid Lines
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+
+                // Perspective Depth Lines
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p3.x, p3.y);
+                ctx.stroke();
+            }
+        }
+    }
+
+    requestAnimationFrame(drawMesh);
+}
+
+drawMesh();
+
+window.addEventListener('resize', resizeCanvas);
+
+document.addEventListener("DOMContentLoaded", () => {
+    // FIX 2: Initialize canvas dimensions and kickstart animation loop
+    resizeCanvas();
+    drawMeshWave();
+
+    const heartBox = document.getElementById("heartBox");
+
+    if (!heartBox) return;
+
+    heartBox.addEventListener("mousemove", (e) => {
+        const rect = heartBox.getBoundingClientRect();
+        const x = e.clientX - rect.left - (rect.width / 2);
+        const y = e.clientY - rect.top - (rect.height / 2);
+
+        const rotateX = (-y / (rect.height / 2)) * 25;
+        const rotateY = (x / (rect.width / 2)) * 25;
+
+        heartBox.style.transition = "transform 0.1s ease-out";
+        heartBox.style.transform = `prespective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.08)`;
+    });
+
+    heartBox.addEventListener("mouseleave", () => {
+        heartBox.style.transition = "transform 0.5s ease";
+        heartBox.style.transform = "prespective(1000px) rotateX(0deg) rotateY(0deg) scale(1)";
+    });
+});
+
+/* Page Navigation Switcher */
+function switchPage(pageId) {
+    document.querySelectorAll('.page-section').forEach(sec => {
+        sec.classList.remove('active-page');
+    });
+    document.querySelectorAll('.nav-links a').forEach(link => {
+        link.classList.remove('active');
+    });
+
+    const selectedSection = document.getElementById(pageId);
+    const selectedNav = document.getElementById(`nav-${pageId}`);
+
+    if (selectedSection) {
+        selectedSection.classList.add('active-page');
+    }
+    if (selectedNav) {
+        selectedNav.classList.add('active');
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* Form Wizard Steps Switcher */
+function goToStep(stepNum) {
+    document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
+
+    const targetStep = document.getElementById(`step${stepNum}`);
+    const targetIndicator = document.getElementById(`step${stepNum}-indicator`);
+
+    if (targetStep) targetStep.classList.add('active');
+    if (targetIndicator) targetIndicator.classList.add('active');
+}
+
+</script> <!-- 1. Close your existing script tag here -->
+
+<!-- 2. Load Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- 3. Open a new script tag for the assessment code -->
+<script>
+let riskChartInstance = null;
+
+async function submitAssessment(event) {
+    if (event) event.preventDefault();
+
+    const getValue = (id, isFloat = false) => {
+        const el = document.getElementById(id);
+        if (!el || el.value === "") return 0;
+        return isFloat ? parseFloat(el.value) : parseInt(el.value, 10);
+    };
+
+    const formData = {
+        Age: getValue('age'),
+        Sex: getValue('sex'),
+        ChestPainType: getValue('cp'),
+        RestingBP: getValue('trestbps'),
+        Cholesterol: getValue('chol'),
+        FastingBS: getValue('fbs'),
+        RestingECG: getValue('restecg'),
+        MaxHR: getValue('thalach'),
+        ExerciseAngina: getValue('exang'),
+        Oldpeak: getValue('oldpeak', true),
+        ST_Slope: getValue('slope')
+    };
+
+    const resultsArea = document.getElementById('resultsArea');
+    const riskSummary = document.getElementById('riskSummary');
+
+    try {
+        if (riskSummary) riskSummary.innerText = "Analyzing clinical biomarkers with ML model...";
+        if (resultsArea) resultsArea.style.display = 'block';
+
+        const response = await fetch('/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const score = data.risk_score;
+        const level = data.risk_level;
+        const advice = data.recommendation;
+
+        // Dynamic text and color assignment
+        let textColor = '#00b4d8'; // Blue for Low
+        if (level === "High Risk") textColor = '#ff4d4d'; // Red
+        if (level === "Medium Risk") textColor = '#ffaa00'; // Yellow/Orange
+
+        if (riskSummary) {
+            riskSummary.innerHTML = `
+                <strong style="color: ${textColor}; font-size: 1.2rem;">${level} (${score}% Cardiac Probability)</strong>
+                <p style="margin-top: 8px;">${advice}</p>
+            `;
+        }
+
+        renderRiskChart(score, level);
+
+        if (resultsArea) {
+            resultsArea.scrollIntoView({ behavior: 'smooth' });
+        }
+
+    } catch (error) {
+        console.error("Prediction error:", error);
+        if (riskSummary) {
+            riskSummary.innerHTML = `<span style="color: #ff4d4d;">Failed to process assessment. Please check backend log.</span>`;
+        }
+    }
+}
+
+function renderRiskChart(score, level) {
+    const ctx = document.getElementById('riskChart').getContext('2d');
+    const safeScore = Math.min(Math.max(score, 0), 100);
+    const remainingScore = 100 - safeScore;
+
+    if (riskChartInstance) {
+        riskChartInstance.destroy();
+    }
+
+    // Set chart color based on risk category
+    let chartColor = '#00b4d8';
+    if (level === "High Risk") chartColor = '#ff4d4d';
+    if (level === "Medium Risk") chartColor = '#ffaa00';
+
+    riskChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Healthy Margin', 'Risk Probability'],
+            datasets: [{
+                data: [remainingScore, safeScore],
+                backgroundColor: ['#2a3b5c', chartColor],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#ffffff' }
+                }
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
