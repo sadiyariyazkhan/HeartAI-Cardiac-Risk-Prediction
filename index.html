@@ -1351,7 +1351,15 @@ async function submitAssessment(event) {
     } catch (error) {
         console.error("Prediction error:", error);
         if (riskSummary) {
-            riskSummary.innerHTML = `<span style="color: #d6336c;">Failed to process assessment. Please check backend log.</span>`;
+            riskSummary.innerHTML = `
+                <span style="color: #c93f7e; font-size: 1.1rem;">Preview Mode</span>
+                <p style="margin-top: 8px; color: #8a7d8a;">
+                    The ML prediction backend is not running in this preview.
+                    When integrated with your FastAPI server
+                    (<code style="color:#c93f7e;">uvicorn app:app --reload</code>),
+                    this form will compute real cardiac risk scores.
+                </p>
+            `;
         }
     }
 }
